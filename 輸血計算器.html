@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>輸血計算器</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1a1a1a;min-height:100vh}
+.app{padding:1rem;max-width:480px;margin:0 auto}
+h1{font-size:17px;font-weight:500;color:#1a1a1a;padding:.75rem 0 .25rem;margin-bottom:.25rem}
+.subtitle{font-size:12px;color:#888;margin-bottom:1rem}
+.section-title{font-size:11px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.06em;margin:1.5rem 0 .6rem}
+.section-title:first-of-type{margin-top:.25rem}
+.card{background:#fff;border:0.5px solid #e0e0e0;border-radius:12px;padding:1rem 1.25rem;margin-bottom:.75rem}
+.weight-row{display:flex;align-items:center;gap:12px}
+.weight-row label{font-size:14px;color:#666;white-space:nowrap}
+.weight-row input{flex:1;padding:8px 12px;border:0.5px solid #ccc;border-radius:8px;font-size:16px;font-weight:500;background:#f7f7f7;color:#1a1a1a;outline:none}
+.weight-row input:focus{border-color:#999}
+.weight-row .unit{font-size:14px;color:#666}
+.empty-hint{font-size:13px;color:#aaa;text-align:center;padding:.75rem 0}
+table.bt{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+table.bt th{font-size:11px;font-weight:500;color:#aaa;padding:5px 4px 5px 0;text-align:left;border-bottom:0.5px solid #ebebeb}
+table.bt th:not(:first-child){text-align:right}
+table.bt td{padding:9px 4px 9px 0;border-bottom:0.5px solid #ebebeb;vertical-align:middle;word-break:break-word}
+table.bt td:not(:first-child){text-align:right}
+table.bt tr:last-child td{border-bottom:none}
+table.bt col.c1{width:26%}table.bt col.c2{width:26%}table.bt col.c3{width:18%}table.bt col.c4{width:30%}
+.bname{font-weight:500;font-size:13px}
+.bsub{font-size:11px;color:#aaa;margin-top:1px}
+.valmain{font-weight:500;font-size:14px}
+.valsub{font-size:11px;color:#888;margin-top:1px}
+.valmax{font-size:11px;color:#bbb;margin-top:2px}
+.badge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500}
+.badge-rise{background:#e8f5e9;color:#2e7d32}
+.badge-info{background:#e3f2fd;color:#1565c0}
+.fill-btn{display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:20px;border:0.5px solid #ddd;background:#f5f5f5;color:#666;cursor:pointer;transition:all .15s;white-space:nowrap;margin-top:5px}
+.fill-btn:hover{background:#fff;border-color:#999;color:#1a1a1a}
+.fill-btn:active{transform:scale(.96)}
+.drip-tabs{display:flex;gap:6px;margin-bottom:.75rem;flex-wrap:wrap}
+.drip-tab{padding:6px 14px;border-radius:20px;font-size:13px;border:0.5px solid #ddd;background:#f5f5f5;color:#666;cursor:pointer;transition:all .15s}
+.drip-tab.active{background:#fff;border-color:#999;color:#1a1a1a;font-weight:500}
+.input-group{margin-bottom:.85rem}
+.input-group label{display:block;font-size:12px;color:#666;margin-bottom:5px}
+.input-group input{width:100%;padding:8px 12px;border:0.5px solid #ccc;border-radius:8px;font-size:15px;background:#f7f7f7;color:#1a1a1a;outline:none}
+.input-group input:focus{border-color:#999}
+.input-hint{font-size:11px;color:#bbb;margin-top:4px}
+.filled-tag{font-size:11px;color:#2e7d32;margin-top:4px;display:none}
+.calc-btn{width:100%;padding:10px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a1a;font-size:15px;font-weight:500;cursor:pointer;transition:all .15s;margin-top:.25rem}
+.calc-btn:hover{background:#f5f5f5}
+.calc-btn:active{transform:scale(.98)}
+.result-box{margin-top:.85rem;background:#f5f5f5;border-radius:8px;padding:1rem;display:none}
+.result-box.show{display:block}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.result-item{background:#fff;border:0.5px solid #e0e0e0;border-radius:8px;padding:.75rem}
+.result-label{font-size:11px;color:#aaa;margin-bottom:4px}
+.result-value{font-size:17px;font-weight:500;color:#1a1a1a}
+.result-note{font-size:11px;color:#888;margin-top:3px}
+.result-end{background:#e3f2fd;border-radius:8px;padding:.75rem;margin-top:.75rem;text-align:center}
+.result-end .elabel{font-size:12px;color:#1565c0;opacity:.8}
+.result-end .etime{font-size:22px;font-weight:500;color:#1565c0}
+</style>
+</head>
+<body>
+<div class="app">
+<h1>輸血計算器</h1>
+<div class="subtitle">PICU 兒科加護病房・20 gtt/mL 輸血套管</div>
+
+<div class="section-title">▸ 血品劑量計算</div>
+<div class="card">
+  <div class="weight-row">
+    <label>體重</label>
+    <input type="number" id="weight" placeholder="輸入體重" min="0" max="200" step="0.1" oninput="calcDose()">
+    <span class="unit">kg</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="empty-hint" id="dose-empty">請輸入體重</div>
+  <div id="dose-table" style="display:none">
+    <table class="bt">
+      <colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"></colgroup>
+      <thead>
+        <tr>
+          <th>血品</th>
+          <th>建議量</th>
+          <th>換算</th>
+          <th>預計效果</th>
+        </tr>
+      </thead>
+      <tbody id="dose-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section-title">▸ 滴數計算（20 gtt/mL）</div>
+<div class="drip-tabs">
+  <div class="drip-tab active" onclick="switchTab('PRBC',this)">PRBC</div>
+  <div class="drip-tab" onclick="switchTab('FFP',this)">FFP</div>
+  <div class="drip-tab" onclick="switchTab('PLT',this)">PLT</div>
+  <div class="drip-tab" onclick="switchTab('CRYO',this)">CRYO</div>
+</div>
+
+<div class="card">
+  <div class="input-group">
+    <label id="blood-label">PRBC 總量</label>
+    <input type="number" id="drip-vol" placeholder="血品總量 (mL)" min="0" step="1">
+    <div class="filled-tag" id="filled-tag">✓ 已帶入劑量計算結果</div>
+  </div>
+  <div class="input-group">
+    <label>預計輸注時間（分鐘）</label>
+    <input type="number" id="drip-min" placeholder="分鐘" min="1" step="1">
+    <div class="input-hint" id="drip-hint"></div>
+  </div>
+  <div class="input-group">
+    <label>開始輸血時間</label>
+    <input type="time" id="drip-start">
+  </div>
+  <button class="calc-btn" onclick="calcDrip()">計算滴數</button>
+
+  <div class="result-box" id="drip-result">
+    <div class="result-grid">
+      <div class="result-item">
+        <div class="result-label">幫浦 rate</div>
+        <div class="result-value" id="res-rate">—</div>
+        <div class="result-note">mL/hr</div>
+      </div>
+      <div class="result-item">
+        <div class="result-label">手控滴速</div>
+        <div class="result-value" id="res-drip">—</div>
+        <div class="result-note" id="res-drip-note"></div>
+      </div>
+    </div>
+    <div class="result-end" id="res-end" style="display:none">
+      <div class="elabel">預計結束時間</div>
+      <div class="etime" id="res-end-time">—</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const BLOOD=[
+  {key:'PRBC',name:'濃縮紅血球',sub:'PRBC',doseMin:10,doseMax:15,unit:'mL/kg',volPerU:100,effect:'Hb ↑ 1–2 g/dL',badge:'badge-rise',note:'1 U = 100 mL',defaultMin:210,hint:'本單位預設 210 min（3.5 hr），最長 ≤ 240 min'},
+  {key:'FFP',name:'新鮮冷凍血漿',sub:'FFP',doseMin:10,doseMax:15,unit:'mL/kg',volPerU:110,effect:'凝血因子 ↑ ~25%',badge:'badge-info',note:'1 U ≈ 110 mL',defaultMin:90,hint:'本單位預設 90 min（1.5 hr），最長 ≤ 120 min'},
+  {key:'PLT',name:'血小板',sub:'Platelets',doseMin:5,doseMax:10,unit:'mL/kg',volPerU:30,effect:'PLT ↑ 2,500–5,000/μL',badge:'badge-rise',note:'1 U ≈ 30 mL',defaultMin:90,hint:'本單位預設 90 min（1.5 hr），最長 ≤ 120 min'},
+  {key:'CRYO',name:'冷凍沉澱品',sub:'Cryoprecipitate',doseMin:1,doseMax:2,unit:'U/kg',volPerU:6.5,effect:'Fbg ↑ 50–100 mg/dL',badge:'badge-info',note:'1 U ≈ 6.5 mL',defaultMin:30,hint:'本單位預設 30 min，最長 ≤ 60 min'}
+];
+
+const GTT=20;
+let currentTab='PRBC';
+
+function nowTime(){
+  const d=new Date();
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+function init(){
+  const el=document.getElementById('drip-start');
+  if(el) el.value=nowTime();
+  setDripDefaults('PRBC');
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',init);
+} else {
+  init();
+}
+
+function setDripDefaults(key){
+  const b=BLOOD.find(x=>x.key===key);
+  if(!b) return;
+  document.getElementById('drip-min').value=b.defaultMin;
+  document.getElementById('drip-hint').textContent=b.hint;
+  document.getElementById('blood-label').textContent=key+' 總量';
+}
+
+function calcDose(){
+  const w=parseFloat(document.getElementById('weight').value);
+  const empty=document.getElementById('dose-empty');
+  const tbl=document.getElementById('dose-table');
+  const tbody=document.getElementById('dose-tbody');
+  if(!w||w<=0){empty.style.display='block';tbl.style.display='none';return;}
+  empty.style.display='none';tbl.style.display='block';
+  tbody.innerHTML=BLOOD.map(b=>{
+    let mlMin,mlMax,uMin,uMax,doseStr,maxStr,uStr;
+    if(b.key==='CRYO'){
+      const uMinV=b.doseMin*w,uMaxV=b.doseMax*w;
+      mlMin=Math.round(uMinV*b.volPerU);
+      mlMax=Math.round(uMaxV*b.volPerU);
+      uMin=Math.round(uMinV);uMax=Math.round(uMaxV);
+      doseStr=uMin+' U';
+      maxStr='至多 '+uMax+' U（'+mlMax+' mL）';
+      uStr=uMin+' U';
+    } else {
+      mlMin=Math.round(b.doseMin*w);
+      mlMax=Math.round(b.doseMax*w);
+      uMin=Math.round(mlMin/b.volPerU*10)/10;
+      uMax=Math.round(mlMax/b.volPerU*10)/10;
+      doseStr=mlMin+' mL';
+      maxStr='至多 '+mlMax+' mL（'+uMax+' U）';
+      uStr=uMin+' U';
+    }
+    return '<tr><td><div class="bname">'+b.name+'</div><div class="bsub">'+b.sub+'</div></td>'
+      +'<td><div class="valmain">'+doseStr+'</div><div class="valsub">'+b.doseMin+' '+b.unit+'</div><div class="valmax">'+maxStr+'</div></td>'
+      +'<td><div class="valmain">'+uStr+'</div><div class="valsub">'+b.note+'</div></td>'
+      +'<td><span class="badge '+b.badge+'">'+b.effect+'</span>'
+      +'<button class="fill-btn" onclick="fillDrip(\''+b.key+'\','+mlMin+')">↓ 帶入滴數</button></td></tr>';
+  }).join('');
+}
+
+function fillDrip(key,ml){
+  switchTabByKey(key);
+  document.getElementById('drip-vol').value=ml;
+  document.getElementById('filled-tag').style.display='block';
+  document.getElementById('drip-result').classList.remove('show');
+  setTimeout(function(){document.getElementById('drip-vol').scrollIntoView({behavior:'smooth',block:'center'});},100);
+}
+
+function switchTabByKey(key){
+  const order=['PRBC','FFP','PLT','CRYO'];
+  const idx=order.indexOf(key);
+  if(idx<0) return;
+  currentTab=key;
+  document.querySelectorAll('.drip-tab').forEach(function(t,i){t.classList.toggle('active',i===idx);});
+  setDripDefaults(key);
+  document.getElementById('filled-tag').style.display='none';
+  document.getElementById('drip-result').classList.remove('show');
+}
+
+function switchTab(tab,el){
+  currentTab=tab;
+  document.querySelectorAll('.drip-tab').forEach(function(t){t.classList.remove('active');});
+  el.classList.add('active');
+  setDripDefaults(tab);
+  document.getElementById('filled-tag').style.display='none';
+  document.getElementById('drip-result').classList.remove('show');
+}
+
+function calcDrip(){
+  const vol=parseFloat(document.getElementById('drip-vol').value);
+  const min=parseFloat(document.getElementById('drip-min').value);
+  const startVal=document.getElementById('drip-start').value;
+  if(!vol||vol<=0||!min||min<=0){alert('請填寫血品總量與輸注時間');return;}
+  const rate=vol/(min/60);
+  const rateRound=Math.round(rate*10)/10;
+  const dropsPerSec=(vol*GTT)/(min*60);
+  const secsPerDrop=1/dropsPerSec;
+  const mainStr=Math.round(secsPerDrop*10)/10+' 秒/滴';
+  const fiveSecDrops=Math.round(dropsPerSec*5*10)/10;
+  const extraStr='5 秒約 '+fiveSecDrops+' 滴';
+  document.getElementById('res-rate').textContent=rateRound;
+  document.getElementById('res-drip').textContent=mainStr;
+  document.getElementById('res-drip-note').textContent=extraStr;
+  const endDiv=document.getElementById('res-end');
+  if(startVal){
+    const parts=startVal.split(':').map(Number);
+    const endMins=(parts[0]*60+parts[1]+Math.round(min))%1440;
+    const eh=String(Math.floor(endMins/60)).padStart(2,'0');
+    const em=String(endMins%60).padStart(2,'0');
+    document.getElementById('res-end-time').textContent=eh+':'+em;
+    endDiv.style.display='block';
+  } else {
+    endDiv.style.display='none';
+  }
+  document.getElementById('drip-result').classList.add('show');
+}
+</script>
+</body>
+</html>
